@@ -1,0 +1,48 @@
+export type Position = 'F' | 'D' | 'G';
+
+export interface Player {
+  id: string;
+  number: number;
+  name: string;
+  position: Position;
+  grade?: string;
+  shoots?: 'L' | 'R';
+}
+
+/** One player's line in one game. Skaters use g/a/pim/sog; goalies use sa/ga. */
+export interface StatLine {
+  playerId: string;
+  g?: number;
+  a?: number;
+  pim?: number;
+  sog?: number;
+  sa?: number;
+  ga?: number;
+}
+
+export interface Game {
+  id: string;
+  /** ISO local datetime, e.g. 2026-11-14T18:30 */
+  date: string;
+  opponent: string;
+  home: boolean;
+  location: string;
+  status: 'scheduled' | 'final' | 'cancelled';
+  ourScore?: number;
+  theirScore?: number;
+  decision?: 'REG' | 'OT' | 'SO';
+  attendance?: number;
+  recap?: string;
+  lines?: StatLine[];
+}
+
+export interface Post {
+  id: string;
+  title: string;
+  date: string;
+  author: string;
+  body: string;
+  tags?: string[];
+}
+
+export type Collection = 'players' | 'games' | 'posts';

@@ -1,0 +1,14 @@
+{
+  "name": "knights-hockey",
+  "private": true,
+  "workspaces": ["web", "api", "infra"],
+  "scripts": {
+    "dev": "npm run dev:api & npm run dev:web",
+    "dev:api": "npm -w api run dev",
+    "dev:web": "npm -w web run dev",
+    "build": "npm -w web run build",
+    "typecheck": "npm -w web run typecheck && npm -w api run typecheck && npm -w infra run typecheck",
+    "synth": "npm run build && npm -w infra run synth",
+    "deploy": "npm run build && npm -w infra run deploy"
+  }
+}
