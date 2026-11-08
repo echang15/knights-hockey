@@ -16,6 +16,10 @@ http.createServer(async (req, res) => {
   const chunks: Buffer[] = [];
   for await (const ch of req) chunks.push(ch as Buffer);
   const raw = Buffer.concat(chunks).toString();
+  if (req.url === '/') {
+    res.writeHead(200, { 'content-type': 'text/plain' }).end('Knights Hockey local API (dev only).\nThis is not the website — open http://localhost:5173\nTry /api/games, /api/players, /api/posts\n');
+    return;
+  }
   const r = await route(req.method ?? 'GET', (req.url ?? '/').split('?')[0], raw ? JSON.parse(raw) : undefined, store);
   res.writeHead(r.status, { 'content-type': 'application/json' }).end(JSON.stringify(r.body));
-}).listen(8787, () => console.log('local api on http://localhost:8787'));
+}).listen(8787, () => console.log('local api on http://localhost:8787  (site: http://localhost:5173)'));
