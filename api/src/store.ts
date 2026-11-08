@@ -45,7 +45,7 @@ export class FileStore implements Store {
   constructor(private file: string) {}
   private async read(): Promise<Record<Collection, Item[]>> {
     try { return JSON.parse(await fs.readFile(this.file, 'utf8')); }
-    catch { return { players: [], games: [], posts: [] }; }
+    catch { return { players: [], games: [], posts: [], checkins: [] }; }
   }
   private async write(d: Record<Collection, Item[]>) {
     await fs.mkdir(path.dirname(this.file), { recursive: true });

@@ -2,7 +2,7 @@ import { CfnOutput, Duration, RemovalPolicy, Stack, type StackProps } from 'aws-
 import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { HttpApi, HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
+import { HttpApi, HttpMethod, HttpStage } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { HttpJwtAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { UserPool, UserPoolClient } from 'aws-cdk-lib/aws-cognito';
@@ -49,10 +49,14 @@ export class KnightsStack extends Stack {
     });
     table.grantReadWriteData(fn);
 
-    const api = new HttpApi(this, 'Api');
+    const api = new HttpApi(this, 'Api', { createDefaultStage: false });
+    // Throttle the whole API: the public check-in route is unauthenticated.
+    new HttpStage(this, 'Stage', { httpApi: api, autoDeploy: true, throttle: { rateLimit: 25, burstLimit: 50 } });
     const integration = new HttpLambdaIntegration('Lambda', fn);
     const jwt = new HttpJwtAuthorizer('Jwt', `https://cognito-idp.${this.region}.amazonaws.com/${pool.userPoolId}`, { jwtAudience: [client.userPoolClientId] });
     api.addRoutes({ path: '/api/{proxy+}', methods: [HttpMethod.GET], integration });
+    // Public RSVP route (more specific than the authorized catch-all below, so it wins).
+    api.addRoutes({ path: '/api/games/{id}/checkin', methods: [HttpMethod.POST], integration });
     api.addRoutes({ path: '/api/{proxy+}', methods: [HttpMethod.PUT, HttpMethod.POST, HttpMethod.DELETE], integration, authorizer: jwt });
 
     // --- Site ---

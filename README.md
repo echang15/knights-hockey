@@ -14,6 +14,12 @@ NHL-style team site: schedule, scores, player/goalie stats, attendance, and a bl
 Reads are public; `PUT`/`DELETE` are rejected by API Gateway unless the caller has a valid Cognito token.
 Stats are computed in the browser from per-game stat lines, so entering a box score updates leaders, goalie SV%, and attendance automatically.
 
+## Game check-in (public RSVP)
+
+Anyone can mark themselves **In** or **Out** on an upcoming game's page — no login. Names can be picked from the roster or typed. One entry per name per game (re-submitting switches In/Out). Counts show on the schedule and the home page's next-game card.
+
+It is the one unauthenticated write in the system, so it is locked down: `POST /api/games/{id}/checkin` only, upcoming games only, name length/character validation, 150 entries per game max, and API-wide throttling (25 req/s). It's a trust-based system — anyone can type someone else's name. Admins (signed in) see an **×** next to each entry to remove junk.
+
 ## Local development (no AWS needed)
 
 ```bash

@@ -48,3 +48,8 @@ export const resultOf = (g: Game) => {
   const win = g.ourScore! > g.theirScore!;
   return { win, label: win ? 'W' : g.decision && g.decision !== 'REG' ? 'OTL' : 'L', suffix: g.decision && g.decision !== 'REG' ? ` (${g.decision})` : '' };
 };
+
+export const rsvpFor = (checkins: import('../../shared/types').Checkin[], gameId: string) => {
+  const mine = checkins.filter((c) => c.gameId === gameId).sort((a, b) => a.at.localeCompare(b.at));
+  return { ins: mine.filter((c) => c.status === 'in'), outs: mine.filter((c) => c.status === 'out') };
+};

@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useData } from '../DataContext';
 import { fmtDate, fmtTime, resultOf } from '../stats';
+import { Rsvp } from '../components/Rsvp';
 
 export default function GamePage() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export default function GamePage() {
         <div className="mid"><small>{r ? `FINAL${r.suffix}` : g.status === 'cancelled' ? 'POSTPONED' : 'UPCOMING'}</small><span>{fmtDate(g.date, { weekday: 'long', month: 'long', day: 'numeric' })}</span><span>{fmtTime(g.date)} · {g.location}</span></div>
         <div className="side"><small>{g.opponent.toUpperCase()}</small><b>{g.status === 'final' ? g.theirScore : '–'}</b></div>
       </div>
+      {g.status === 'scheduled' && <Rsvp game={g} />}
       {g.attendance != null && <p className="muted">Attendance: <b>{g.attendance.toLocaleString()}</b></p>}
       {g.recap && <section><h3 className="sect">Recap</h3>{g.recap.split(/\n\s*\n/).map((p, i) => <p key={i}>{p}</p>)}</section>}
       {sk.length > 0 && (

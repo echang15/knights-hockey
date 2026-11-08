@@ -49,4 +49,13 @@ export interface Post {
   tags?: string[];
 }
 
-export type Collection = 'players' | 'games' | 'posts';
+/** A public RSVP. One per (game, name); re-submitting updates it. */
+export interface Checkin {
+  id: string;
+  gameId: string;
+  name: string;
+  status: 'in' | 'out';
+  at: string;
+}
+
+export type Collection = 'players' | 'games' | 'posts' | 'checkins';
