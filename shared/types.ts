@@ -7,6 +7,10 @@ export interface Player {
   position: Position;
   grade?: string;
   shoots?: 'L' | 'R';
+  /** Alumni: off the active roster, but their game stats still count in history. */
+  retired?: boolean;
+  /** Free text, e.g. "2025" or "2023-24". */
+  retiredYear?: string;
 }
 
 /** One player's line in one game. Skaters use g/a/pim/sog; goalies use sa/ga. */

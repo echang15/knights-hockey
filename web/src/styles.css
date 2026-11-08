@@ -73,3 +73,7 @@ input,select,textarea{background:#06170f;border:1px solid var(--line);color:var(
 .badge.w{background:var(--gold)!important;color:#1a1200!important}
 .tick .win{text-decoration-color:var(--gold)}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:0}
+
+.tag{font:700 11px 'Barlow Condensed';letter-spacing:.08em;background:var(--gold);color:#1a1200;padding:1px 6px;border-radius:3px;margin-left:8px;vertical-align:middle}
+.alumni{opacity:.9;border-style:dashed}.alumni .num{color:var(--muted)}.alumni .career{color:var(--ice)}
+label.check{display:flex;align-items:center;gap:8px;color:var(--ice);margin:12px 0;flex-direction:row}

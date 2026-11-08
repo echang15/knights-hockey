@@ -131,7 +131,7 @@ function Players() {
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const p: Player = { id: editing!.id, name: String(f.get('name')), number: Number(f.get('number')), position: String(f.get('pos')) as Player['position'], grade: String(f.get('grade')) || undefined, shoots: (String(f.get('shoots')) || undefined) as Player['shoots'] };
+    const p: Player = { id: editing!.id, name: String(f.get('name')), number: Number(f.get('number')), position: String(f.get('pos')) as Player['position'], grade: String(f.get('grade')) || undefined, shoots: (String(f.get('shoots')) || undefined) as Player['shoots'], retired: f.get('retired') === 'on' || undefined, retiredYear: f.get('retired') === 'on' ? String(f.get('retiredYear')) || undefined : undefined };
     s.run(async () => { await save('players', p); setEditing(null); });
   };
   return (
@@ -144,10 +144,12 @@ function Players() {
           <label>Position<select name="pos" defaultValue={editing.position}><option value="F">Forward</option><option value="D">Defense</option><option value="G">Goalie</option></select></label>
           <label>Shoots<select name="shoots" defaultValue={editing.shoots ?? ''}><option value="">–</option><option>L</option><option>R</option></select></label>
           <label>Grade<input name="grade" defaultValue={editing.grade} /></label>
+          <label className="check"><span><input name="retired" type="checkbox" defaultChecked={editing.retired} /> Retired / alumni</span></label>
+          <label>Retired year<input name="retiredYear" placeholder="2025" defaultValue={editing.retiredYear} /></label>
         </div><div><button className="btn">Save</button> <button type="button" className="btn ghost" onClick={() => setEditing(null)}>Cancel</button></div></form>
       )}
       <div className="card flush">{data!.players.map((p) => (
-        <div key={p.id} className="admin-row"><span>#{p.number} {p.name} ({p.position})</span>
+        <div key={p.id} className="admin-row"><span>#{p.number} {p.name} ({p.position}){p.retired && <span className="tag">RETIRED{p.retiredYear ? ` ${p.retiredYear}` : ''}</span>}</span>
           <span><button className="btn ghost" onClick={() => setEditing(p)}>Edit</button> <button className="btn danger" onClick={() => confirm('Delete player?') && s.run(() => remove('players', p.id))}>Delete</button></span></div>))}</div>
     </>
   );

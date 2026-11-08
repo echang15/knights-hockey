@@ -10,7 +10,7 @@ export default function Home() {
   const rec = record(games), att = attendance(games);
   const next = games.find((g) => g.status === 'scheduled');
   const last = finals(games).at(-1);
-  const { skaters, goalies } = playerStats(players, games);
+  const { skaters, goalies } = playerStats(players.filter((p) => !p.retired), games);
   const top = [...skaters].sort((a, b) => b.pts - a.pts || b.g - a.g)[0];
   const goalie = [...goalies].filter((g) => g.sa > 0).sort((a, b) => b.svPct - a.svPct)[0];
   return (

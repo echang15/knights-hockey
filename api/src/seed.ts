@@ -7,6 +7,7 @@ const names: [number, string, Player['position']][] = [
   [5, 'Sample Defense C', 'D'], [30, 'Sample Goalie A', 'G'], [35, 'Sample Goalie B', 'G'],
 ];
 const players: Player[] = names.map(([number, name, position], i) => ({ id: `p${i + 1}`, number, name, position }));
+players.push({ id: 'p12', number: 19, name: 'Sample Alumnus', position: 'F', retired: true, retiredYear: '2026' });
 
 const opp = ['Sample Wolves', 'Sample Raiders', 'Sample Storm', 'Sample Titans', 'Sample Hawks', 'Sample Bears'];
 const rnd = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -27,6 +28,7 @@ const games: Game[] = opp.concat(opp).map((o, i) => {
       if (a.id !== s.id) { const al = lines.find((l) => l.playerId === a.id) ?? (lines.push({ playerId: a.id, g: 0, a: 0, pim: 0, sog: 0 }), lines[lines.length - 1]); al.a!++; }
     }
     lines.push({ playerId: 'p10', sa: g.theirScore + 15 + Math.floor(r() * 10), ga: g.theirScore });
+    if (i < 3) lines.push({ playerId: 'p12', g: 1, a: 1, pim: 0, sog: 3 });
     g.lines = lines;
     g.recap = `Sample recap for the game vs ${o}.`;
   }
