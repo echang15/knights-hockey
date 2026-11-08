@@ -42,6 +42,6 @@ Then sign in at `/admin`.
 
 ## Customising
 
-- Team name / branding: `web/src/config.ts`, colors in `:root` of `web/src/styles.css`, crest in `web/src/components/Crest.tsx` + `web/public/favicon.svg`.
+- Team name / branding: `web/src/config.ts`, colors in `:root` of `web/src/styles.css` (currently green/white), logo: put your file at `web/public/logo.png` (shown site-wide; a placeholder shield appears if missing) and optionally replace `web/public/favicon.svg`.
 - Custom domain: add a certificate + `domainNames` to the `Distribution` in `infra/lib/stack.ts`.
 - Remove sample data: it only lives in `api/src/seed.ts` and is used by the local server alone — it is never deployed.
