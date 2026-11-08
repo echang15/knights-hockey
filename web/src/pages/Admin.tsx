@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import type { Game, Player, Post, StatLine } from '../../../shared/types';
 import { useData } from '../DataContext';
 import { isLocalDev, isSignedIn, signIn, signOut } from '../auth';
-import { newId, remove, save } from '../api';
+import { newId, remove, save, uploadPhoto } from '../api';
+import { Avatar } from '../components/Avatar';
 import { fmtDate } from '../stats';
 
 type Tab = 'games' | 'players' | 'posts';
@@ -131,7 +132,7 @@ function Players() {
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const p: Player = { id: editing!.id, name: String(f.get('name')), number: Number(f.get('number')), position: String(f.get('pos')) as Player['position'], grade: String(f.get('grade')) || undefined, shoots: (String(f.get('shoots')) || undefined) as Player['shoots'], retired: f.get('retired') === 'on' || undefined, retiredYear: f.get('retired') === 'on' ? String(f.get('retiredYear')) || undefined : undefined };
+    const p: Player = { id: editing!.id, name: String(f.get('name')), number: Number(f.get('number')), position: String(f.get('pos')) as Player['position'], grade: String(f.get('grade')) || undefined, shoots: (String(f.get('shoots')) || undefined) as Player['shoots'], photoUrl: String(f.get('photoUrl')) || undefined, bio: String(f.get('bio')) || undefined, hometown: String(f.get('hometown')) || undefined, height: String(f.get('height')) || undefined, weight: String(f.get('weight')) || undefined, retired: f.get('retired') === 'on' || undefined, retiredYear: f.get('retired') === 'on' ? String(f.get('retiredYear')) || undefined : undefined };
     s.run(async () => { await save('players', p); setEditing(null); });
   };
   return (
@@ -146,7 +147,15 @@ function Players() {
           <label>Grade<input name="grade" defaultValue={editing.grade} /></label>
           <label className="check"><span><input name="retired" type="checkbox" defaultChecked={editing.retired} /> Retired / alumni</span></label>
           <label>Retired year<input name="retiredYear" placeholder="2025" defaultValue={editing.retiredYear} /></label>
-        </div><div><button className="btn">Save</button> <button type="button" className="btn ghost" onClick={() => setEditing(null)}>Cancel</button></div></form>
+        </div>
+        <div className="row">
+          <label>Hometown<input name="hometown" defaultValue={editing.hometown} /></label>
+          <label>Height<input name="height" placeholder={"5'10\""} defaultValue={editing.height} /></label>
+          <label>Weight<input name="weight" placeholder="165 lb" defaultValue={editing.weight} /></label>
+        </div>
+        <PhotoField player={editing} />
+        <label>Bio (blank line = new paragraph)<textarea name="bio" rows={5} defaultValue={editing.bio} /></label>
+        <div><button className="btn">Save</button> <button type="button" className="btn ghost" onClick={() => setEditing(null)}>Cancel</button></div></form>
       )}
       <div className="card flush">{data!.players.map((p) => (
         <div key={p.id} className="admin-row"><span>#{p.number} {p.name} ({p.position}){p.retired && <span className="tag">RETIRED{p.retiredYear ? ` ${p.retiredYear}` : ''}</span>}</span>
@@ -181,5 +190,37 @@ function Posts() {
         <div key={p.id} className="admin-row"><span>{p.date} — {p.title}</span>
           <span><button className="btn ghost" onClick={() => setEditing(p)}>Edit</button> <button className="btn danger" onClick={() => confirm('Delete post?') && s.run(() => remove('posts', p.id))}>Delete</button></span></div>))}</div>
     </>
+  );
+}
+
+/** Crops the chosen image to a 480px square JPEG in the browser (keeps uploads small), uploads it, and stores the URL in a hidden input. */
+async function toSquareJpeg(file: File, side = 480): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  const c = document.createElement('canvas'); c.width = c.height = side;
+  const m = Math.min(bmp.width, bmp.height);
+  // Crop from the upper-middle: headshots usually have the face in the top half.
+  c.getContext('2d')!.drawImage(bmp, (bmp.width - m) / 2, (bmp.height - m) * 0.25, m, m, 0, 0, side, side);
+  return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+}
+
+function PhotoField({ player }: { player: Player }) {
+  const [url, setUrl] = useState(player.photoUrl ?? '');
+  const [state, setState] = useState('');
+  const pick = async (file?: File) => {
+    if (!file) return;
+    setState('Uploading…');
+    try { setUrl(await uploadPhoto(player.id, await toSquareJpeg(file))); setState('Uploaded ✓ — remember to Save'); }
+    catch (e) { setState('Error: ' + (e as Error).message); }
+  };
+  return (
+    <div className="photo-field">
+      <Avatar player={{ ...player, photoUrl: url || undefined }} size={72} />
+      <div>
+        <label>Photo<input type="file" accept="image/*" onChange={(e) => pick(e.target.files?.[0])} /></label>
+        <small className="muted">{state || 'Any image; it is cropped to a square and shrunk automatically.'}</small>
+        {url && <button type="button" className="btn ghost" onClick={() => setUrl('')}>Remove photo</button>}
+      </div>
+      <input type="hidden" name="photoUrl" value={url} />
+    </div>
   );
 }

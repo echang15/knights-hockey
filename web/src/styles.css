@@ -85,3 +85,28 @@ label.check{display:flex;align-items:center;gap:8px;color:var(--ice);margin:12px
 .rsvp .x{background:none;border:0;color:var(--muted);cursor:pointer;margin-left:6px;font-size:16px}
 .btn:disabled{opacity:.5;cursor:wait}
 .btn.danger{color:#fff}
+
+/* photos & leaders */
+.avatar{border-radius:50%;object-fit:cover;border:2px solid var(--gold);background:var(--ink);flex:none;vertical-align:middle}
+.avatar.ph{display:inline-flex;align-items:center;justify-content:center;font:800 16px 'Barlow Condensed';color:var(--muted);border-color:var(--line)}
+.roster-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;margin-bottom:10px;border:1px solid var(--line)}
+a.player:hover{border-color:var(--gold)}
+.leader-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.leader-card{padding:0;overflow:hidden}.leader-card h4{padding:10px 16px;background:#031009;font-size:18px;color:var(--gold)}
+.featured{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:16px;background:linear-gradient(90deg,#14663f66,transparent)}
+.featured .avatar{border-width:3px}.featured small{display:block;color:var(--muted)}.featured .nm{font:700 22px 'Barlow Condensed';text-transform:uppercase;line-height:1.1}
+.featured .val{font:800 52px 'Barlow Condensed';line-height:1}
+.leader-card ol{list-style:none;margin:0;padding:0}.leader-card li a{display:grid;grid-template-columns:22px 28px 1fr auto;gap:10px;align-items:center;padding:7px 16px;border-top:1px solid var(--line)}
+.leader-card li a:hover{background:#14663f55}.leader-card .rk{color:var(--muted);font-weight:700}.leader-card li b{font:700 20px 'Barlow Condensed'}
+.board td.rk{font:800 22px 'Barlow Condensed';color:var(--muted)}.board tr.first td.rk{color:var(--gold)}.board tr.first{background:#14663f55}
+.pl{display:inline-flex;align-items:center;gap:10px}.pl small{display:block;color:var(--muted);font-size:12px;line-height:1}.pl span{line-height:1.2}
+.bio-hero{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;border-top:4px solid var(--gold);margin:12px 0}
+.bio-photo{width:240px;height:240px;border-radius:12px;object-fit:cover;border:2px solid var(--gold)}.bio-photo.ph{display:flex;align-items:center;justify-content:center;border-color:var(--line);background:var(--ink)}
+.bio-num{font:800 28px 'Barlow Condensed';color:var(--gold)}.bio-hero h1{font-size:clamp(36px,7vw,64px);line-height:1}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}.chips span{background:#031009;border:1px solid var(--line);padding:3px 12px;border-radius:99px;font-size:14px}
+.photo-field{display:flex;gap:14px;align-items:center}
+.roster-photo+.num{margin-top:0}
+@media(max-width:640px){.bio-hero{grid-template-columns:1fr}.bio-photo{width:100%;height:auto;aspect-ratio:1}}
+
+.roster-photo.ph{display:flex;align-items:center;justify-content:center;background:var(--ink)}
+.roster-photo.ph img{width:55%;height:auto;opacity:.22;filter:grayscale(.4);border:0;border-radius:0}

@@ -1,5 +1,6 @@
 import type { Collection } from '../../shared/types';
 import type { Store } from './store';
+import type { PhotoStore } from './photos';
 
 export interface Res { status: number; body: unknown }
 const COLLECTIONS: Collection[] = ['players', 'games', 'posts', 'checkins'];
@@ -37,8 +38,23 @@ async function checkin(gameId: string, body: any, store: Store): Promise<Res> {
   return { status: 200, body: { ok: true } };
 }
 
-export async function route(method: string, rawPath: string, body: unknown, store: Store): Promise<Res> {
+const MAX_PHOTO_BYTES = 1_000_000;
+
+/** PUT /api/photos/{playerId} {image: base64 JPEG} -> {url}. Admin only (API Gateway authorizer). */
+async function uploadPhoto(id: string, body: any, photos: PhotoStore): Promise<Res> {
+  if (!ID.test(id)) return { status: 400, body: { error: 'bad id' } };
+  const b64 = typeof body?.image === 'string' ? body.image : '';
+  const bytes = Buffer.from(b64, 'base64');
+  if (bytes.length < 100 || bytes.length > MAX_PHOTO_BYTES) return { status: 400, body: { error: 'image must be under 1 MB' } };
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) return { status: 400, body: { error: 'image must be a JPEG' } };
+  const key = `${id}-${Date.now().toString(36)}.jpg`;
+  await photos.put(key, bytes);
+  return { status: 200, body: { url: `/photos/${key}` } };
+}
+
+export async function route(method: string, rawPath: string, body: unknown, store: Store, photos: PhotoStore): Promise<Res> {
   const [, api, coll, id] = rawPath.split('/');
+  if (api === 'api' && coll === 'photos' && method === 'PUT') return uploadPhoto(id, body, photos);
   if (api !== 'api' || !COLLECTIONS.includes(coll as Collection)) return { status: 404, body: { error: 'not found' } };
   const c = coll as Collection;
   const parts = rawPath.split('/');

@@ -11,6 +11,12 @@ export interface Player {
   retired?: boolean;
   /** Free text, e.g. "2025" or "2023-24". */
   retiredYear?: string;
+  /** Site-relative URL, e.g. /photos/p1-abc.jpg (set by the admin photo uploader). */
+  photoUrl?: string;
+  bio?: string;
+  hometown?: string;
+  height?: string;
+  weight?: string;
 }
 
 /** One player's line in one game. Skaters use g/a/pim/sog; goalies use sa/ga. */

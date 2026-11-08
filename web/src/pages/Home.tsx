@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useData } from '../DataContext';
-import { attendance, finals, fmtDate, fmtTime, pct, playerStats, record, rsvpFor } from '../stats';
+import { attendance, finals, fmtDate, fmtTime, playerStats, ranked, record, rsvpFor } from '../stats';
 import { GameRow } from '../components/GameRow';
+import { LeaderCard } from '../components/LeaderCard';
 import { TEAM } from '../config';
 
 export default function Home() {
@@ -10,9 +11,8 @@ export default function Home() {
   const rec = record(games), att = attendance(games);
   const next = games.find((g) => g.status === 'scheduled');
   const last = finals(games).at(-1);
-  const { skaters, goalies } = playerStats(players.filter((p) => !p.retired), games);
-  const top = [...skaters].sort((a, b) => b.pts - a.pts || b.g - a.g)[0];
-  const goalie = [...goalies].filter((g) => g.sa > 0).sort((a, b) => b.svPct - a.svPct)[0];
+  const { skaters } = playerStats(players.filter((p) => !p.retired), games);
+  const pts = ranked(skaters.filter((s) => s.pts > 0), (s) => s.pts, (a, b) => b.g - a.g);
   return (
     <>
       <section className="hero">
@@ -42,12 +42,8 @@ export default function Home() {
           <Link className="more" to="/schedule">Full schedule →</Link>
         </section>
         <section>
-          <h3 className="sect">Team leaders</h3>
-          <div className="card leaders">
-            {top && <div><small>POINTS</small><b>{top.pts}</b><span>#{top.player.number} {top.player.name}</span></div>}
-            {top && <div><small>GOALS</small><b>{[...skaters].sort((a, b) => b.g - a.g)[0].g}</b><span>#{[...skaters].sort((a, b) => b.g - a.g)[0].player.number} {[...skaters].sort((a, b) => b.g - a.g)[0].player.name}</span></div>}
-            {goalie && <div><small>SV%</small><b>{pct(goalie.svPct)}</b><span>#{goalie.player.number} {goalie.player.name}</span></div>}
-          </div>
+          <h3 className="sect">Points leaders</h3>
+          <LeaderCard title="Points" rows={pts.map((r) => ({ player: r.player, value: String(r.pts), rank: r.rank, tied: r.tied }))} />
           <Link className="more" to="/stats">All stats →</Link>
         </section>
       </div>

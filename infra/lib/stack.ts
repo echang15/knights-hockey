@@ -38,16 +38,20 @@ export class KnightsStack extends Stack {
     });
     const client = new UserPoolClient(this, 'WebClient', { userPool: pool, generateSecret: false, authFlows: { userSrp: true } });
 
+    // Player photos: separate from the site bucket so site deploys never prune them.
+    const photoBucket = new Bucket(this, 'Photos', { blockPublicAccess: BlockPublicAccess.BLOCK_ALL, removalPolicy: RemovalPolicy.RETAIN });
+
     // --- API ---
     const fn = new NodejsFunction(this, 'ApiFn', {
       entry: root('api/src/handler.ts'),
       runtime: Runtime.NODEJS_20_X,
       memorySize: 256,
       timeout: Duration.seconds(10),
-      environment: { TABLE_NAME: table.tableName },
+      environment: { TABLE_NAME: table.tableName, PHOTO_BUCKET: photoBucket.bucketName },
       bundling: { minify: true, target: 'node20' },
     });
     table.grantReadWriteData(fn);
+    photoBucket.grantPut(fn);
 
     const api = new HttpApi(this, 'Api', { createDefaultStage: false });
     // Throttle the whole API: the public check-in route is unauthenticated.
@@ -72,6 +76,11 @@ export class KnightsStack extends Stack {
         functionAssociations: [{ function: spaRewrite, eventType: FunctionEventType.VIEWER_REQUEST }],
       },
       additionalBehaviors: {
+        '/photos/*': {
+          origin: S3BucketOrigin.withOriginAccessControl(photoBucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+        },
         '/api/*': {
           origin: new HttpOrigin(`${api.apiId}.execute-api.${this.region}.amazonaws.com`),
           viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,

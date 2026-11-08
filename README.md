@@ -14,6 +14,12 @@ NHL-style team site: schedule, scores, player/goalie stats, attendance, and a bl
 Reads are public; `PUT`/`DELETE` are rejected by API Gateway unless the caller has a valid Cognito token.
 Stats are computed in the browser from per-game stat lines, so entering a box score updates leaders, goalie SV%, and attendance automatically.
 
+## Player photos & bios
+
+In **Admin → players → Edit**, choose a photo plus optional hometown, height, weight and bio. The browser crops the image to a small square JPEG and uploads it through the (login-protected) API to a private S3 bucket that CloudFront serves at `/photos/*`. Photos appear on the roster, each player's bio page (`/player/<id>`, linked from every player name), and the stats tables and leaderboards. Players without a photo show their jersey number instead.
+
+**Privacy:** the site is public, and many players are minors. Get parent/guardian consent before posting photos or personal details like hometown, height and weight (all optional).
+
 ## Game check-in (public RSVP)
 
 Anyone can mark themselves **In** or **Out** on an upcoming game's page — no login. Names can be picked from the roster or typed. One entry per name per game (re-submitting switches In/Out). Counts show on the schedule and the home page's next-game card.

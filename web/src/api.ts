@@ -21,4 +21,7 @@ export async function loadAll(): Promise<Data> {
   players.sort((a, b) => a.number - b.number);
   return { players, games, posts, checkins };
 }
+export async function uploadPhoto(playerId: string, base64Jpeg: string): Promise<string> {
+  return (await req(`/photos/${playerId}`, { method: 'PUT', body: JSON.stringify({ image: base64Jpeg }) })).url;
+}
 export const newId = (prefix = '') => prefix + Math.random().toString(36).slice(2, 10);

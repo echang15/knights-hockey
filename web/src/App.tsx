@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Schedule from './pages/Schedule';
 import GamePage from './pages/GamePage';
 import Roster from './pages/Roster';
+import PlayerPage from './pages/PlayerPage';
 import Stats from './pages/Stats';
 import Blog, { PostPage } from './pages/Blog';
 import Admin from './pages/Admin';
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/game/:id" element={<GamePage />} />
             <Route path="/roster" element={<Roster />} />
+            <Route path="/player/:id" element={<PlayerPage />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:id" element={<PostPage />} />

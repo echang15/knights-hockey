@@ -53,3 +53,17 @@ export const rsvpFor = (checkins: import('../../shared/types').Checkin[], gameId
   const mine = checkins.filter((c) => c.gameId === gameId).sort((a, b) => a.at.localeCompare(b.at));
   return { ins: mine.filter((c) => c.status === 'in'), outs: mine.filter((c) => c.status === 'out') };
 };
+
+/** Competition ranking (ties share a rank), highest value first. */
+export function ranked<T>(rows: T[], value: (r: T) => number, tiebreak: (a: T, b: T) => number = () => 0): (T & { rank: number; tied: boolean })[] {
+  const sorted = [...rows].sort((a, b) => value(b) - value(a) || tiebreak(a, b));
+  return sorted.map((r) => ({ ...r, rank: sorted.findIndex((x) => value(x) === value(r)) + 1, tied: sorted.filter((x) => value(x) === value(r)).length > 1 }));
+}
+
+/** Per-game log for one player, newest first. */
+export function gameLog(playerId: string, games: Game[]) {
+  return finals(games)
+    .map((g) => ({ game: g, line: g.lines?.find((l) => l.playerId === playerId) }))
+    .filter((x) => x.line)
+    .reverse();
+}
