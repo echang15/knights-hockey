@@ -20,7 +20,7 @@ export default function App() {
     <>
       {data && <Ticker games={data.games} />}
       <header className="nav">
-        <Link to="/" className="brand"><Crest size={44} /><span><b>{TEAM.name}</b><small>{TEAM.full}</small></span></Link>
+        <Link to="/" className="brand"><Crest size={64} /><span><b>{TEAM.name}</b><small>{TEAM.full}</small></span></Link>
         <nav>
           {[['/', 'Home'], ['/schedule', 'Schedule'], ['/roster', 'Roster'], ['/stats', 'Stats'], ['/blog', 'Blog']].map(([to, l]) => (
             <NavLink key={to} to={to} end={to === '/'}>{l}</NavLink>
