@@ -1,42 +1,59 @@
-import { useState, type FormEvent } from 'react';
-import type { Game, Player, Post, StatLine } from '../../../shared/types';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { Game, Member, Player, Post, StatLine } from '../../../shared/types';
 import { useData } from '../DataContext';
-import { isLocalDev, isSignedIn, signIn, signOut } from '../auth';
-import { newId, remove, save, uploadPhoto } from '../api';
+import { signOut, useAuth } from '../auth';
+import { inviteMember, listMembers, newId, remove, removeMember, save, uploadPhoto } from '../api';
 import { Avatar } from '../components/Avatar';
+import { SignIn } from '../components/SignIn';
 import { fmtDate } from '../stats';
 
-type Tab = 'games' | 'players' | 'posts';
+type Tab = 'games' | 'players' | 'posts' | 'members';
 
 export default function Admin() {
-  const [, bump] = useState(0);
+  const auth = useAuth();
   const [tab, setTab] = useState<Tab>('games');
-  if (!isSignedIn()) return <Login onDone={() => bump((n) => n + 1)} />;
+  if (!auth.isMember) return <SignIn title="Admin sign-in" />;
+  if (!auth.isAdmin) return <><h1 className="page">Admin</h1><p>Your account is a player account, which can view the gallery but not edit the site. Ask an admin if you need more access.</p><button className="btn ghost" onClick={signOut}>Sign out</button></>;
   return (
     <>
       <h1 className="page">Admin</h1>
-      {isLocalDev() ? <p className="muted">Local dev mode — no sign-in required.</p> : <button className="btn ghost" onClick={() => { signOut(); bump((n) => n + 1); }}>Sign out</button>}
-      <div className="tabs">{(['games', 'players', 'posts'] as Tab[]).map((t) => <button key={t} className={t === tab ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>)}</div>
-      {tab === 'games' && <Games />}{tab === 'players' && <Players />}{tab === 'posts' && <Posts />}
+      <p className="muted">Signed in as {auth.email} <button className="btn ghost" onClick={signOut}>Sign out</button></p>
+      <div className="tabs">{(['games', 'players', 'posts', 'members'] as Tab[]).map((t) => <button key={t} className={t === tab ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>)}</div>
+      {tab === 'games' && <Games />}{tab === 'players' && <Players />}{tab === 'posts' && <Posts />}{tab === 'members' && <Members />}
     </>
   );
 }
 
-function Login({ onDone }: { onDone: () => void }) {
-  const [err, setErr] = useState('');
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
+/** Invite players/admins. They get an email with a temporary password; their role decides what they can see. */
+function Members() {
+  const auth = useAuth();
+  const [list, setList] = useState<Member[] | null>(null);
+  const [msg, setMsg] = useState('');
+  const load = () => listMembers().then(setList).catch((e) => setMsg('Error: ' + e.message));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, []);
+  const invite = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    try { await signIn(String(f.get('u')), String(f.get('p'))); onDone(); } catch (x) { setErr((x as Error).message); }
+    try { await inviteMember(String(f.get('email')), String(f.get('role')) as Member['role']); setMsg('Invitation sent ✓'); e.currentTarget.reset(); await load(); }
+    catch (x) { setMsg('Error: ' + (x as Error).message); }
+  };
+  const del = async (m: Member) => {
+    if (!confirm(`Remove ${m.email}? They will lose access immediately.`)) return;
+    try { await removeMember(m.email); setMsg('Removed ✓'); await load(); } catch (x) { setMsg('Error: ' + (x as Error).message); }
   };
   return (
-    <form onSubmit={submit} className="card form narrow">
-      <h2>Admin sign-in</h2>
-      <label>Email<input name="u" type="email" autoComplete="username" required /></label>
-      <label>Password<input name="p" type="password" autoComplete="current-password" required /></label>
-      {err && <p className="error">{err}</p>}
-      <button className="btn">Sign in</button>
-    </form>
+    <>
+      <form onSubmit={invite} className="card form"><div className="row">
+        <label>Email<input name="email" type="email" required /></label>
+        <label>Role<select name="role" defaultValue="player"><option value="player">Player / family — can view the gallery</option><option value="admin">Admin — can edit everything</option></select></label>
+      </div><div><button className="btn">Send invitation</button> <span className="muted">{msg}</span></div></form>
+      <p className="muted">Guests (not signed in) can see the schedule, scores and stats, but not the gallery.</p>
+      <div className="card flush">{(list ?? []).map((m) => (
+        <div key={m.email} className="admin-row"><span>{m.email} <span className="tag">{m.role.toUpperCase()}</span>{m.status === 'FORCE_CHANGE_PASSWORD' && <small className="muted"> invited, not signed in yet</small>}</span>
+          {m.email.toLowerCase() !== auth.email?.toLowerCase() && <button className="btn danger" onClick={() => del(m)}>Remove</button>}</div>))}
+        {list?.length === 0 && <div className="admin-row muted">No members yet.</div>}</div>
+    </>
   );
 }
 

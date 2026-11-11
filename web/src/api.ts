@@ -1,10 +1,14 @@
 import type { Checkin, Collection, Game, Player, Post } from '../../shared/types';
 import { config } from './config';
-import { authHeader } from './auth';
+import { authHeader, signOut } from './auth';
+import type { AlbumDetail, AlbumSummary, Album, MediaView, Member } from '../../shared/types';
 
 async function req(path: string, init?: RequestInit) {
   const r = await fetch(config.apiUrl + path, { ...init, headers: { 'content-type': 'application/json', ...authHeader(), ...init?.headers } });
-  if (!r.ok) throw new Error(r.status === 401 ? 'Session expired — sign in again' : ((await r.json().catch(() => ({}))).error ?? r.statusText));
+  if (!r.ok) {
+    if (r.status === 401 && authHeader().Authorization) signOut(); // expired token: drop to guest
+    throw new Error(r.status === 401 ? 'Please sign in again' : ((await r.json().catch(() => ({}))).error ?? r.statusText));
+  }
   return r.json();
 }
 export const list = <T,>(c: Collection): Promise<T[]> => req('/' + c);
@@ -25,3 +29,18 @@ export async function uploadPhoto(playerId: string, base64Jpeg: string): Promise
   return (await req(`/photos/${playerId}`, { method: 'PUT', body: JSON.stringify({ image: base64Jpeg }) })).url;
 }
 export const newId = (prefix = '') => prefix + Math.random().toString(36).slice(2, 10);
+
+// --- members-only gallery (the API rejects guests; these never work signed out)
+export const listAlbums = (): Promise<AlbumSummary[]> => req('/gallery/albums');
+export const getAlbum = (id: string): Promise<AlbumDetail> => req(`/gallery/albums/${id}`);
+export const saveAlbum = (a: Album): Promise<Album> => req(`/gallery/albums/${a.id}`, { method: 'PUT', body: JSON.stringify(a) });
+export const deleteAlbum = (id: string) => req(`/gallery/albums/${id}`, { method: 'DELETE' });
+export const uploadMedia = (albumId: string, image: string, thumb: string, caption?: string): Promise<MediaView> =>
+  req(`/gallery/albums/${albumId}/photos`, { method: 'POST', body: JSON.stringify({ image, thumb, caption }) });
+export const deleteMedia = (id: string) => req(`/gallery/media/${id}`, { method: 'DELETE' });
+export const saveCaption = (id: string, caption: string) => req(`/gallery/media/${id}`, { method: 'PUT', body: JSON.stringify({ caption }) });
+
+// --- member accounts (admins)
+export const listMembers = (): Promise<Member[]> => req('/members');
+export const inviteMember = (email: string, role: Member['role']) => req('/members', { method: 'POST', body: JSON.stringify({ email, role }) });
+export const removeMember = (email: string) => req('/members/remove', { method: 'POST', body: JSON.stringify({ email }) });

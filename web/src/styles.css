@@ -110,3 +110,28 @@ a.player:hover{border-color:var(--gold)}
 
 .roster-photo.ph{display:flex;align-items:center;justify-content:center;background:var(--ink)}
 .roster-photo.ph img{width:55%;height:auto;opacity:.22;filter:grayscale(.4);border:0;border-radius:0}
+
+/* gallery */
+.album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:16px}
+.album{padding:0;overflow:hidden}.album:hover{border-color:var(--gold)}
+.album img,.album-empty{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.album-empty{display:flex;align-items:center;justify-content:center;background:var(--ink);color:var(--muted)}
+.album-meta{padding:12px 14px}.album-meta b{display:block;font:700 22px 'Barlow Condensed';text-transform:uppercase}.album-meta small{color:var(--muted)}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:12px}
+.photo{position:relative;padding:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--ink);cursor:zoom-in;aspect-ratio:1}
+.photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}.photo:hover img{transform:scale(1.04)}
+.cover-btn{position:absolute;top:6px;right:6px;background:#000a;color:var(--muted);border-radius:50%;width:26px;height:26px;display:none;align-items:center;justify-content:center}
+.photo:hover .cover-btn,.cover-btn.on{display:flex}.cover-btn.on{color:var(--gold)}.cover-btn:hover{color:var(--gold)}
+.admin-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0;padding:12px}
+label.btn{display:inline-block;color:#04170d}
+.lightbox{position:fixed;inset:0;background:#000000f2;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+.lightbox figure{margin:0;max-width:min(1200px,100%);max-height:100%;display:flex;flex-direction:column;gap:10px}
+.lightbox img{max-width:100%;max-height:78vh;object-fit:contain;border-radius:6px;margin:0 auto}
+.lightbox figcaption{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.lb-close,.lb-nav{position:absolute;background:#0008;color:#fff;border:1px solid var(--line);border-radius:50%;width:44px;height:44px;font-size:26px;cursor:pointer;z-index:2}
+.lb-close{top:16px;right:16px}.lb-nav{top:50%;transform:translateY(-50%)}.lb-nav.prev{left:16px}.lb-nav.next{right:16px}
+.lb-close:hover,.lb-nav:hover{border-color:var(--gold);color:var(--gold)}
+.foot-links{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.linklike{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0;text-decoration:underline}
+.devrole{display:flex;flex-direction:row;align-items:center;gap:6px;border:1px dashed var(--gold);padding:2px 8px;border-radius:6px;color:var(--gold)}
+.devrole select{padding:2px}

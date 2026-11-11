@@ -9,7 +9,8 @@ NHL-style team site: schedule, scores, player/goalie stats, attendance, and a bl
 | Site (React + Vite) | S3 + CloudFront |
 | API (`/api/*`, same origin via CloudFront) | API Gateway HTTP API + Lambda |
 | Data | DynamoDB (single table, retained on stack delete) |
-| Admin login | Cognito user pool (no self sign-up); write routes require a JWT |
+| Accounts & roles | Cognito user pool (no self sign-up) with `admins` / `players` groups |
+| Gallery photos | private S3 bucket, delivered via short-lived signed links |
 
 Reads are public; `PUT`/`DELETE` are rejected by API Gateway unless the caller has a valid Cognito token.
 Stats are computed in the browser from per-game stat lines, so entering a box score updates leaders, goalie SV%, and attendance automatically.
@@ -32,7 +33,7 @@ It is the one unauthenticated write in the system, so it is locked down: `POST /
 npm install
 npm run dev        # API on :8787 (JSON file, seeded with SAMPLE data), site on :5173
 ```
-The local API has **no auth** — it is for development only. `/admin` is open in this mode.
+The local API has **no real auth** — it is for development only. Instead the footer shows a **DEV role** switcher (guest / player / admin) so you can try all three access levels. Gallery photos are stored in `api/data/gallery/`.
 Delete `api/data/db.json` to reset.
 
 ## Deploy
@@ -42,15 +43,36 @@ Prereqs: AWS credentials configured, and once per account/region `npx -w infra c
 ```bash
 npm run deploy
 ```
-Outputs the site URL and `UserPoolId`. Create your admin login (no sign-up form exists by design):
+Outputs the site URL and `UserPoolId`. There are three access levels, decided by Cognito group:
+
+| Who | How | Can do |
+|---|---|---|
+| **Guest** | not signed in | public site: schedule, scores, stats, roster, blog, game check-in |
+| **Player** | Cognito group `players` | everything a guest can, plus the **members-only gallery** |
+| **Admin** | Cognito group `admins` | everything, plus edit the site, manage albums/photos, and invite members |
+
+Create the **first admin** by hand (there is no sign-up form by design):
 
 ```bash
 aws cognito-idp admin-create-user --user-pool-id <UserPoolId> --username you@example.com \
-  --user-attributes Name=email,Value=you@example.com Name=email_verified,Value=true --message-action SUPPRESS
-aws cognito-idp admin-set-user-password --user-pool-id <UserPoolId> --username you@example.com \
-  --password '<strong password>' --permanent
+  --user-attributes Name=email,Value=you@example.com Name=email_verified,Value=true
+aws cognito-idp admin-add-user-to-group --user-pool-id <UserPoolId> --username you@example.com --group-name admins
 ```
-Then sign in at `/admin`.
+Cognito emails you a temporary password; sign in at `/login` and you'll be asked to choose a real one.
+
+> **Upgrading from an earlier version?** Admins are now identified by group membership, not just by having an account. Add your existing admin user to the `admins` group (second command above) or you will be locked out of editing.
+
+After that, invite everyone else from **Admin → members** (pick *Player* for players and families). They get an email with a temporary password. Remove someone there and they lose access immediately.
+
+## Gallery (members only)
+
+Signed-in players and admins see a **Gallery** link; guests don't, and the API refuses them too. Admins create albums and add photos (multi-select) right on the gallery pages; ★ sets an album's cover, and photos can be captioned or deleted.
+
+- Photos are shrunk in the browser (1600 px full size + 400 px thumbnail JPEGs) before upload.
+- They live in a **private** S3 bucket with no public access and no CloudFront route. The API hands signed-in members **15-minute signed links**; the page refreshes them automatically. A link a member copies stops working shortly after.
+- Role checks happen inside the API (it reads the verified Cognito group), not just in the UI or API Gateway routing.
+- Caveat: members can still save or screenshot photos they can see, so share only what you are comfortable with team members having. Get parent/guardian consent for photos of minors.
+- Forgot password: remove the member and re-invite them (a self-serve reset isn't built yet).
 
 ## Customising
 

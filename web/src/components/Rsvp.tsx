@@ -2,13 +2,14 @@ import { useState } from 'react';
 import type { Game } from '../../../shared/types';
 import { useData } from '../DataContext';
 import { checkin, remove } from '../api';
-import { isSignedIn } from '../auth';
+import { useAuth } from '../auth';
 import { rsvpFor } from '../stats';
 
 const KEY = 'rsvpName';
 
 export function Rsvp({ game }: { game: Game }) {
   const { data, reload } = useData();
+  const { isAdmin } = useAuth();
   const [name, setName] = useState(() => localStorage.getItem(KEY) ?? '');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
@@ -33,7 +34,7 @@ export function Rsvp({ game }: { game: Game }) {
     <div className={`rsvp-col ${cls}`}>
       <h4>{label} ({items.length})</h4>
       {items.length === 0 ? <small className="muted">Nobody yet</small> : (
-        <ul>{items.map((c) => <li key={c.id}>{c.name}{isSignedIn() && <button className="x" title="Remove" onClick={() => del(c.id)}>×</button>}</li>)}</ul>
+        <ul>{items.map((c) => <li key={c.id}>{c.name}{isAdmin && <button className="x" title="Remove" onClick={() => del(c.id)}>×</button>}</li>)}</ul>
       )}
     </div>
   );

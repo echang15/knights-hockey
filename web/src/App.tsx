@@ -12,10 +12,15 @@ import PlayerPage from './pages/PlayerPage';
 import Stats from './pages/Stats';
 import Blog, { PostPage } from './pages/Blog';
 import Admin from './pages/Admin';
+import Gallery from './pages/Gallery';
+import AlbumPage from './pages/AlbumPage';
+import { SignIn } from './components/SignIn';
+import { setDevRole, signOut, useAuth, isLocalDev } from './auth';
 
 export default function App() {
   const { data, error } = useData();
   const { pathname } = useLocation();
+  const auth = useAuth();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return (
     <>
@@ -23,7 +28,7 @@ export default function App() {
       <header className="nav">
         <Link to="/" className="brand"><Crest size={64} /><span><b>{TEAM.name}</b><small>{TEAM.full}</small></span></Link>
         <nav>
-          {[['/', 'Home'], ['/schedule', 'Schedule'], ['/roster', 'Roster'], ['/stats', 'Stats'], ['/blog', 'Blog']].map(([to, l]) => (
+          {[['/', 'Home'], ['/schedule', 'Schedule'], ['/roster', 'Roster'], ['/stats', 'Stats'], ['/blog', 'Blog'], ...(auth.isMember ? [['/gallery', 'Gallery']] : [])].map(([to, l]) => (
             <NavLink key={to} to={to} end={to === '/'}>{l}</NavLink>
           ))}
         </nav>
@@ -42,11 +47,25 @@ export default function App() {
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:id" element={<PostPage />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/gallery/:id" element={<AlbumPage />} />
+            <Route path="/login" element={auth.isMember ? <MemberHome /> : <SignIn />} />
             <Route path="*" element={<p>Page not found.</p>} />
           </Routes>
         )}
       </main>
-      <footer><span>© {new Date().getFullYear()} {TEAM.full}</span><Link to="/admin">Admin</Link></footer>
+      <footer>
+        <span>© {new Date().getFullYear()} {TEAM.full}</span>
+        <span className="foot-links">
+          {isLocalDev() && <label className="devrole">DEV role <select value={auth.role} onChange={(e) => setDevRole(e.target.value as 'guest' | 'player' | 'admin')}><option>guest</option><option>player</option><option>admin</option></select></label>}
+          {auth.isMember ? <><span className="muted">{auth.email}</span> <button className="linklike" onClick={signOut}>Sign out</button></> : <Link to="/login">Member sign-in</Link>}
+          {auth.isAdmin && <Link to="/admin">Admin</Link>}
+        </span>
+      </footer>
     </>
   );
+}
+
+function MemberHome() {
+  return <p>You're signed in. <Link to="/gallery">Open the gallery →</Link></p>;
 }

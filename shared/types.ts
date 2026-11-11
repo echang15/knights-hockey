@@ -64,4 +64,16 @@ export interface Checkin {
   at: string;
 }
 
-export type Collection = 'players' | 'games' | 'posts' | 'checkins';
+export type Collection = 'players' | 'games' | 'posts' | 'checkins' | 'albums' | 'media';
+
+/** Who is calling. Derived server-side from Cognito groups; guests have no/unknown group. */
+export type Role = 'admin' | 'player' | 'guest';
+
+// --- Members-only gallery (never exposed through the public collection routes) ---
+export interface Album { id: string; title: string; description?: string; date: string; coverId?: string }
+export interface Media { id: string; albumId: string; caption?: string; at: string }
+export interface AlbumSummary extends Album { count: number; coverUrl?: string }
+/** `thumbUrl`/`url` are short-lived signed links; re-fetch the album to refresh them. */
+export interface MediaView extends Media { thumbUrl: string; url: string }
+export interface AlbumDetail { album: Album; media: MediaView[] }
+export interface Member { email: string; role: 'admin' | 'player'; status: string; created?: string }
