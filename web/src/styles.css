@@ -137,3 +137,7 @@ label.btn{display:inline-block;color:#04170d}
 .pos-group{margin-top:8px}.pos-label{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:11px}
 .rsvp .pick{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0;text-align:left}.rsvp .pick:hover{color:var(--gold)}.rsvp .pick .n{color:var(--gold);font-weight:700}
 @media(max-width:700px){.rsvp-cols.three{grid-template-columns:1fr}}
+
+.whoami{flex:1 1 200px;align-self:center}.whoami b{color:var(--gold)}
+.rsvp .me{color:var(--gold);font-weight:600}
+.link-edit{display:flex;gap:8px;align-items:center}.link-edit select{max-width:230px}

@@ -1,5 +1,6 @@
 // SAMPLE DATA for local development only. Replace via the /admin page.
 import type { Player, Game, Post, StatLine } from '../../shared/types';
+import { linkId } from './links';
 
 const names: [number, string, Player['position']][] = [
   [91, 'Sample Forward A', 'F'], [17, 'Sample Forward B', 'F'], [9, 'Sample Forward C', 'F'], [22, 'Sample Forward D', 'F'],
@@ -39,4 +40,7 @@ const posts: Post[] = [
   { id: 'tape-tales', title: 'Tape tales: the great stick-tape shortage', date: '2026-10-20', author: 'Team Parent', tags: ['random'], body: 'Nobody knows where it all goes. Somebody owes the bench about forty rolls.' },
 ];
 
-export const SEED = { players, games, posts };
+// parent@example.com is the dev "player" account (see MemoryMembers); linked to Sample Forward A.
+const links = [{ id: linkId('parent@example.com'), email: 'parent@example.com', playerId: 'p1' }];
+
+export const SEED = { players, games, posts, links };

@@ -17,11 +17,14 @@ export function Rsvp({ game }: { game: Game }) {
   const { data, reload } = useData();
   const { isAdmin, isMember } = useAuth();
   const roster = data!.players.filter((p) => !p.retired);
-  const [pid, setPid] = useState(() => (roster.some((p) => p.id === localStorage.getItem(KEY)) ? localStorage.getItem(KEY)! : ''));
+  // A player account is locked to its own linked player (the API enforces this too). Admins may mark anyone.
+  const linked = roster.find((p) => p.id === data!.me?.playerId);
+  const [pid, setPid] = useState(() => linked?.id ?? (isAdmin && roster.some((p) => p.id === localStorage.getItem(KEY)) ? localStorage.getItem(KEY)! : ''));
+  const activePid = isAdmin ? pid : linked?.id ?? '';
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const lineup = lineupFor(data!.players, data!.checkins, game.id);
-  const current = pid ? lineup.status.get(pid) : undefined;
+  const current = activePid ? lineup.status.get(activePid) : undefined;
 
   if (!isMember) {
     return (
@@ -37,7 +40,7 @@ export function Rsvp({ game }: { game: Game }) {
     setBusy(true);
     try {
       await checkin(game.id, playerId, status);
-      localStorage.setItem(KEY, playerId);
+      if (isAdmin) localStorage.setItem(KEY, playerId);
       await reload();
       const who = roster.find((p) => p.id === playerId)!;
       setMsg(`${who.name} is ${status === 'in' ? 'IN ✓' : 'OUT'}`);
@@ -61,7 +64,9 @@ export function Rsvp({ game }: { game: Game }) {
         return g.length ? (
           <div key={pos} className="pos-group"><small className="pos-label">{POS[pos]}</small>
             <ul>{g.map((p) => (
-              <li key={p.id}><button className="pick" onClick={() => setPid(p.id)} title="Select this player"><span className="n">#{p.number}</span> {p.name}</button>
+              <li key={p.id}>{isAdmin
+                ? <button className="pick" onClick={() => setPid(p.id)} title="Select this player"><span className="n">#{p.number}</span> {p.name}</button>
+                : <span className={p.id === activePid ? 'me' : ''}><span className="n">#{p.number}</span> {p.name}{p.id === activePid && <small className="muted"> (you)</small>}</span>}
                 {isAdmin && cls !== 'pending' && <button className="x" title="Clear (back to no response)" onClick={() => clear(p)}>×</button>}</li>))}</ul>
           </div>
         ) : null;
@@ -73,14 +78,20 @@ export function Rsvp({ game }: { game: Game }) {
     <section>
       <h3 className="sect">Availability</h3>
       <div className="card rsvp">
-        <div className="rsvp-form">
-          <select value={pid} onChange={(e) => { setPid(e.target.value); setMsg(''); }}>
-            <option value="">Select a player…</option>
-            {roster.map((p) => <option key={p.id} value={p.id}>#{p.number} {p.name} ({p.position})</option>)}
-          </select>
-          <button className={`btn ${current === 'in' ? '' : 'ghost'}`} disabled={busy || !pid} onClick={() => go(pid, 'in')}>I’m in</button>
-          <button className={`btn ${current === 'out' ? 'danger' : 'ghost'}`} disabled={busy || !pid} onClick={() => go(pid, 'out')}>I’m out</button>
-        </div>
+        {!isAdmin && !linked ? (
+          <p className="error">Your account isn’t linked to a player yet, so you can’t check in. Ask a coach to link it (Admin → members).</p>
+        ) : (
+          <div className="rsvp-form">
+            {isAdmin ? (
+              <select value={pid} onChange={(e) => { setPid(e.target.value); setMsg(''); }}>
+                <option value="">Select a player…</option>
+                {roster.map((p) => <option key={p.id} value={p.id}>#{p.number} {p.name} ({p.position})</option>)}
+              </select>
+            ) : <span className="whoami">Checking in as <b>#{linked!.number} {linked!.name}</b></span>}
+            <button className={`btn ${current === 'in' ? '' : 'ghost'}`} disabled={busy || !activePid} onClick={() => go(activePid, 'in')}>I’m in</button>
+            <button className={`btn ${current === 'out' ? 'danger' : 'ghost'}`} disabled={busy || !activePid} onClick={() => go(activePid, 'out')}>I’m out</button>
+          </div>
+        )}
         {msg ? <p className="muted">{msg}</p> : current && <p className="muted">Currently marked: {current === 'in' ? 'IN ✓' : 'OUT'} (tap again to change)</p>}
         <p className="tally">{tally.map((t) => <span key={t.pos}><b>{t.in}</b>/{t.all} {POS[t.pos]}</span>)}<span><b>{lineup.pending.length}</b> no response</span></p>
         <div className="rsvp-cols three">{col('In', 'in', lineup.in)}{col('Out', 'out', lineup.out)}{col('No response', 'pending', lineup.pending)}</div>

@@ -27,7 +27,11 @@ Purely internal, so coaches know who is coming and can set lines and defensive p
 
 - Only active roster players can be checked in (no free-text names; retired players are excluded), and only for upcoming games. Re-submitting switches In/Out.
 - Guests can't check in **and can't see any of it**: the API refuses their reads and writes, and the site shows no counts or names to them.
-- Any member can update any roster player's status (so a parent can answer for their kid, and a coach can enter a text reply). Admins can clear an entry with **×**.
+- **Each player account is linked to exactly one roster player** and can only mark that player — the API enforces it using the account's verified email, so it can't be bypassed from the browser. **Admins can mark any roster player.** A player account with no link can't check anyone in until an admin links it. Several accounts may link to the same player (e.g. both parents).
+- Set the link when inviting (**Admin → members**, required for the *Player* role) and change it any time from the dropdown on that member's row; it takes effect immediately, with no re-login. Admin accounts may optionally be linked too (handy for a coach-parent).
+- Admins can clear an entry with **×**.
+
+> **Upgrading?** Player accounts created before linking existed have no link yet — open **Admin → members** and pick each person's player, or they'll see "Your account isn't linked to a player yet".
 
 ## Local development (no AWS needed)
 

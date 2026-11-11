@@ -42,6 +42,6 @@ http.createServer(async (req, res) => {
   // DEV ONLY: pretend to be a role via header so all three access levels can be tried without Cognito.
   const h = String(req.headers['x-dev-role'] ?? 'admin');
   const caller: Role = h === 'player' || h === 'guest' ? h : 'admin';
-  const r = await route(req.method ?? 'GET', (req.url ?? '/').split('?')[0], raw ? JSON.parse(raw) : undefined, { store, photos, gallery, members, caller, email: 'coach@example.com' });
+  const r = await route(req.method ?? 'GET', (req.url ?? '/').split('?')[0], raw ? JSON.parse(raw) : undefined, { store, photos, gallery, members, caller, email: caller === 'admin' ? 'coach@example.com' : caller === 'player' ? 'parent@example.com' : undefined });
   res.writeHead(r.status, { 'content-type': 'application/json' }).end(JSON.stringify(r.body));
 }).listen(8787, () => console.log('local api on http://localhost:8787  (site: http://localhost:5173)'));

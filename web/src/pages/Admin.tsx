@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import type { Game, Member, Player, Post, StatLine } from '../../../shared/types';
 import { useData } from '../DataContext';
 import { signOut, useAuth } from '../auth';
-import { inviteMember, listMembers, newId, remove, removeMember, save, uploadPhoto } from '../api';
+import { inviteMember, listMembers, newId, remove, removeMember, save, setMemberPlayer, uploadPhoto } from '../api';
 import { Avatar } from '../components/Avatar';
 import { SignIn } from '../components/SignIn';
 import { fmtDate } from '../stats';
@@ -24,34 +24,50 @@ export default function Admin() {
   );
 }
 
-/** Invite players/admins. They get an email with a temporary password; their role decides what they can see. */
+/** Invite players/admins. They get an email with a temporary password. A player account is tied to exactly one roster player. */
 function Members() {
   const auth = useAuth();
+  const { data } = useData();
+  const roster = data!.players.filter((p) => !p.retired);
   const [list, setList] = useState<Member[] | null>(null);
   const [msg, setMsg] = useState('');
+  const [role, setRole] = useState<Member['role']>('player');
   const load = () => listMembers().then(setList).catch((e) => setMsg('Error: ' + e.message));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
   const invite = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    try { await inviteMember(String(f.get('email')), String(f.get('role')) as Member['role']); setMsg('Invitation sent ✓'); e.currentTarget.reset(); await load(); }
+    const form = e.currentTarget, f = new FormData(form);
+    try { await inviteMember(String(f.get('email')), role, String(f.get('playerId') ?? '')); setMsg('Invitation sent ✓'); form.reset(); await load(); }
     catch (x) { setMsg('Error: ' + (x as Error).message); }
+  };
+  const link = async (m: Member, playerId: string) => {
+    try { await setMemberPlayer(m.email, playerId || null); setMsg(`Updated ${m.email} ✓`); await load(); } catch (x) { setMsg('Error: ' + (x as Error).message); }
   };
   const del = async (m: Member) => {
     if (!confirm(`Remove ${m.email}? They will lose access immediately.`)) return;
     try { await removeMember(m.email); setMsg('Removed ✓'); await load(); } catch (x) { setMsg('Error: ' + (x as Error).message); }
   };
+  const name = (id?: string) => data!.players.find((p) => p.id === id);
   return (
     <>
       <form onSubmit={invite} className="card form"><div className="row">
         <label>Email<input name="email" type="email" required /></label>
-        <label>Role<select name="role" defaultValue="player"><option value="player">Player / family — can view the gallery</option><option value="admin">Admin — can edit everything</option></select></label>
+        <label>Role<select value={role} onChange={(e) => setRole(e.target.value as Member['role'])}><option value="player">Player / family — gallery + checks in their own player</option><option value="admin">Admin — edits everything, can mark any player</option></select></label>
+        <label>{role === 'player' ? 'Linked player (required)' : 'Linked player (optional)'}
+          <select name="playerId" required={role === 'player'} defaultValue=""><option value="">{role === 'player' ? 'Select a player…' : '— none —'}</option>{roster.map((p) => <option key={p.id} value={p.id}>#{p.number} {p.name}</option>)}</select></label>
       </div><div><button className="btn">Send invitation</button> <span className="muted">{msg}</span></div></form>
-      <p className="muted">Guests (not signed in) can see the schedule, scores and stats, but not the gallery.</p>
+      <p className="muted">Each player account checks in only its own player; admins can mark anyone. Guests (not signed in) see the schedule, scores and stats only.</p>
       <div className="card flush">{(list ?? []).map((m) => (
         <div key={m.email} className="admin-row"><span>{m.email} <span className="tag">{m.role.toUpperCase()}</span>{m.status === 'FORCE_CHANGE_PASSWORD' && <small className="muted"> invited, not signed in yet</small>}</span>
-          {m.email.toLowerCase() !== auth.email?.toLowerCase() && <button className="btn danger" onClick={() => del(m)}>Remove</button>}</div>))}
+          <span className="link-edit">
+            <select value={m.playerId ?? ''} onChange={(e) => link(m, e.target.value)} title="Which roster player this account checks in">
+              {m.role === 'admin' && <option value="">— none —</option>}
+              {m.role === 'player' && !roster.some((p) => p.id === m.playerId) && <option value="">{m.playerId && name(m.playerId) ? `${name(m.playerId)!.name} (retired)` : 'Select a player…'}</option>}
+              {roster.map((p) => <option key={p.id} value={p.id}>#{p.number} {p.name}</option>)}
+            </select>
+            {m.email.toLowerCase() !== auth.email?.toLowerCase() && <button className="btn danger" onClick={() => del(m)}>Remove</button>}
+          </span></div>))}
         {list?.length === 0 && <div className="admin-row muted">No members yet.</div>}</div>
     </>
   );

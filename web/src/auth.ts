@@ -29,7 +29,7 @@ function compute(): AuthState {
   let d = decode(token);
   if (d.exp && d.exp * 1000 < Date.now()) { token = null; sessionStorage.removeItem('idToken'); d = { role: 'guest' }; }
   const role = isLocalDev() ? devRole() : d.role;
-  return { role, email: isLocalDev() ? 'coach@example.com' : d.email, isMember: role !== 'guest', isAdmin: role === 'admin' };
+  return { role, email: isLocalDev() ? (role === 'admin' ? 'coach@example.com' : role === 'player' ? 'parent@example.com' : undefined) : d.email, isMember: role !== 'guest', isAdmin: role === 'admin' };
 }
 let snap = compute();
 const subs = new Set<() => void>();

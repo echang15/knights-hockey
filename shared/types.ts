@@ -63,7 +63,7 @@ export interface Checkin {
   at: string;
 }
 
-export type Collection = 'players' | 'games' | 'posts' | 'checkins' | 'albums' | 'media';
+export type Collection = 'players' | 'games' | 'posts' | 'checkins' | 'albums' | 'media' | 'links';
 
 /** Who is calling. Derived server-side from Cognito groups; guests have no/unknown group. */
 export type Role = 'admin' | 'player' | 'guest';
@@ -75,4 +75,6 @@ export interface AlbumSummary extends Album { count: number; coverUrl?: string }
 /** `thumbUrl`/`url` are short-lived signed links; re-fetch the album to refresh them. */
 export interface MediaView extends Media { thumbUrl: string; url: string }
 export interface AlbumDetail { album: Album; media: MediaView[] }
-export interface Member { email: string; role: 'admin' | 'player'; status: string; created?: string }
+export interface Member { email: string; role: 'admin' | 'player'; status: string; created?: string; /** roster player this account is linked to */ playerId?: string }
+/** The signed-in caller, as the API sees them. */
+export interface Me { role: Role; email?: string; playerId?: string }

@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import type { Album, AlbumDetail, AlbumSummary, Collection, Media, MediaView, Member, Role } from '../../shared/types';
+import type { Album, AlbumDetail, AlbumSummary, Collection, Media, MediaView, Me, Member, Role } from '../../shared/types';
 import type { Store } from './store';
 import type { PhotoStore } from './photos';
 import type { GalleryStore } from './gallery';
 import { MemberExistsError, type MemberStore } from './members';
+import { allLinks, linkFor, linkId } from './links';
 
 export interface Res { status: number; body: unknown }
 /** Everything a request handler needs. `caller` is derived from verified Cognito groups, never from the request body. */
@@ -26,7 +27,8 @@ function validate(c: Collection, b: any): string | null {
  * Write authorization is enforced by API Gateway's JWT authorizer (or LOCAL dev mode); the router trusts the caller.
  */
 /** MEMBERS ONLY: POST /api/games/{id}/checkin {playerId, status:'in'|'out'} — availability for a roster player. */
-async function checkin(gameId: string, body: any, store: Store): Promise<Res> {
+async function checkin(gameId: string, body: any, ctx: Ctx): Promise<Res> {
+  const store = ctx.store;
   const playerId = typeof body?.playerId === 'string' ? body.playerId : '';
   if (!ID.test(playerId)) return { status: 400, body: { error: 'playerId required' } };
   if (body.status !== 'in' && body.status !== 'out') return { status: 400, body: { error: "status must be 'in' or 'out'" } };
@@ -34,6 +36,12 @@ async function checkin(gameId: string, body: any, store: Store): Promise<Res> {
   if (!ID.test(id)) return { status: 400, body: { error: 'bad id' } };
   const player = (await store.list('players')).find((p) => p.id === playerId);
   if (!player || player.retired) return { status: 404, body: { error: 'player is not on the active roster' } };
+  // Admins may mark any roster player. A player account may only mark the player it is linked to.
+  if (ctx.caller !== 'admin') {
+    const mine = await linkFor(store, ctx.email);
+    if (!mine) return { status: 403, body: { error: "your account isn't linked to a player yet — ask a coach to link it" } };
+    if (mine !== playerId) return { status: 403, body: { error: 'you can only check in your own player' } };
+  }
   const game = (await store.list('games')).find((g) => g.id === gameId);
   if (!game) return { status: 404, body: { error: 'game not found' } };
   if (game.status !== 'scheduled') return { status: 409, body: { error: 'check-in is only open for upcoming games' } };
@@ -154,18 +162,42 @@ async function gallery(method: string, parts: string[], body: any, ctx: Ctx): Pr
 // ---------------------------------------------------------------- members (admins only)
 const EMAIL = /^[^\s@<>]{1,64}@[^\s@<>]{1,255}\.[^\s@<>]{2,}$/;
 
+async function activePlayer(store: Store, id: unknown): Promise<boolean> {
+  return typeof id === 'string' && (await store.list('players')).some((p) => p.id === id && !p.retired);
+}
+
 async function members(method: string, parts: string[], body: any, ctx: Ctx): Promise<Res> {
   const d = deny(ctx, 'admin');
   if (d) return d;
   const sub = parts[3];
-  if (method === 'GET' && !sub) return { status: 200, body: await ctx.members.list() };
+  if (method === 'GET' && !sub) {
+    const links = await allLinks(ctx.store);
+    const list: Member[] = (await ctx.members.list()).map((m) => ({ ...m, playerId: links.find((l) => l.id === linkId(m.email))?.playerId }));
+    return { status: 200, body: list };
+  }
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
   if (!EMAIL.test(email)) return { status: 400, body: { error: 'valid email required' } };
   if (method === 'POST' && !sub) {
     if (body.role !== 'admin' && body.role !== 'player') return { status: 400, body: { error: "role must be 'admin' or 'player'" } };
+    const hasLink = body.playerId !== undefined && body.playerId !== null && body.playerId !== '';
+    if (body.role === 'player' && !hasLink) return { status: 400, body: { error: 'a player account must be linked to a roster player' } };
+    if (hasLink && !(await activePlayer(ctx.store, body.playerId))) return { status: 400, body: { error: 'that player is not on the active roster' } };
     try { await ctx.members.invite(email, body.role); } catch (e) {
       if (e instanceof MemberExistsError) return { status: 409, body: { error: 'that email already has an account' } };
       throw e;
+    }
+    if (hasLink) await ctx.store.put('links', { id: linkId(email), email, playerId: body.playerId });
+    return { status: 200, body: { ok: true } };
+  }
+  if (method === 'PUT' && sub === 'link') {
+    const target = (await ctx.members.list()).find((m) => m.email.toLowerCase() === email);
+    if (!target) return { status: 404, body: { error: 'no such member' } };
+    if (body.playerId === null || body.playerId === '') {
+      if (target.role === 'player') return { status: 400, body: { error: 'a player account must stay linked to a roster player' } };
+      await ctx.store.remove('links', linkId(email));
+    } else {
+      if (!(await activePlayer(ctx.store, body.playerId))) return { status: 400, body: { error: 'that player is not on the active roster' } };
+      await ctx.store.put('links', { id: linkId(email), email, playerId: body.playerId });
     }
     return { status: 200, body: { ok: true } };
   }
@@ -175,6 +207,7 @@ async function members(method: string, parts: string[], body: any, ctx: Ctx): Pr
     const target = all.find((m) => m.email.toLowerCase() === email);
     if (target?.role === 'admin' && all.filter((m) => m.role === 'admin').length <= 1) return { status: 400, body: { error: "can't remove the last admin" } };
     await ctx.members.remove(email);
+    await ctx.store.remove('links', linkId(email));
     return { status: 200, body: { ok: true } };
   }
   return { status: 404, body: { error: 'not found' } };
@@ -185,11 +218,17 @@ export async function route(method: string, rawPath: string, body: unknown, ctx:
   const [, api, coll, id] = parts;
   if (api === 'api' && coll === 'gallery') return gallery(method, parts, body, ctx);
   if (api === 'api' && coll === 'members') return members(method, parts, body, ctx);
+  if (api === 'api' && coll === 'me' && method === 'GET') {
+    const d = deny(ctx, 'member');
+    if (d) return d;
+    const me: Me = { role: ctx.caller, email: ctx.email, playerId: await linkFor(ctx.store, ctx.email) };
+    return { status: 200, body: me };
+  }
   if (api === 'api' && coll === 'photos' && method === 'PUT') return deny(ctx, 'admin') ?? uploadPhoto(id, body, ctx.photos);
   if (api !== 'api' || !COLLECTIONS.includes(coll as Collection)) return { status: 404, body: { error: 'not found' } };
   const c = coll as Collection;
   const store = ctx.store;
-  if (method === 'POST' && c === 'games' && parts[4] === 'checkin' && parts.length === 5) return deny(ctx, 'member') ?? checkin(id, body, store); // players + admins only; reading the lists stays public
+  if (method === 'POST' && c === 'games' && parts[4] === 'checkin' && parts.length === 5) return deny(ctx, 'member') ?? checkin(id, body, ctx); // members only; players only for their own linked player
   if (method === 'GET' && !id) {
     if (c === 'checkins') { const d = deny(ctx, 'member'); if (d) return d; } // availability is internal: members only
     return { status: 200, body: await store.list(c) }; // everything else here is public

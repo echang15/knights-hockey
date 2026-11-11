@@ -82,6 +82,7 @@ export class KnightsStack extends Stack {
     // Player availability (check-in) is internal: reading and writing both need a token; the Lambda checks the group.
     api.addRoutes({ path: '/api/games/{id}/checkin', methods: [HttpMethod.POST], integration, authorizer: jwt });
     api.addRoutes({ path: '/api/checkins', methods: [HttpMethod.GET], integration, authorizer: jwt });
+    api.addRoutes({ path: '/api/me', methods: [HttpMethod.GET], integration, authorizer: jwt });
     // Members-only and admin-only areas: a valid token is required here, and the Lambda then enforces the group.
     const all = [HttpMethod.GET, HttpMethod.PUT, HttpMethod.POST, HttpMethod.DELETE];
     api.addRoutes({ path: '/api/gallery/{proxy+}', methods: all, integration, authorizer: jwt });
