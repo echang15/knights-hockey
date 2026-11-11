@@ -44,10 +44,6 @@ td{padding:8px;text-align:center;border-top:1px solid var(--line)}td.l,th:nth-ch
 .scroll{overflow-x:auto}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
 .tile{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold);padding:12px;border-radius:8px}.tile small{color:var(--muted);font-weight:700}.tile b{display:block;font-size:36px;line-height:1.1}
-.bars{display:flex;gap:6px;align-items:flex-end;height:180px;padding:12px;background:var(--panel);border-radius:8px;overflow-x:auto}
-.bar{flex:1 0 34px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
-.bar i{width:100%;background:var(--green);border-radius:3px 3px 0 0}.bar.away i,.dot.away{background:var(--muted)}.bar small{font-size:10px;color:var(--muted);margin-top:4px}
-.dot{display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;margin-left:12px}
 .scoreboard{display:grid;grid-template-columns:1fr 2fr 1fr;text-align:center;align-items:center;margin:12px 0;border-top:4px solid var(--gold)}
 .scoreboard b{font-size:clamp(56px,12vw,110px);line-height:1;display:block}.scoreboard small{color:var(--muted);font-weight:700;letter-spacing:.1em}
 .scoreboard .mid span{display:block;color:var(--muted)}.scoreboard .mid small{color:var(--gold);font-size:20px}
@@ -135,3 +131,9 @@ label.btn{display:inline-block;color:#04170d}
 .linklike{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0;text-decoration:underline}
 .devrole{display:flex;flex-direction:row;align-items:center;gap:6px;border:1px dashed var(--gold);padding:2px 8px;border-radius:6px;color:var(--gold)}
 .devrole select{padding:2px}
+.rsvp-cols.three{grid-template-columns:repeat(3,1fr)}
+.tally{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0 0;color:var(--muted)}.tally b{color:#fff;font:700 22px 'Barlow Condensed'}
+.rsvp-col.out h4{color:#ff9a9a}.rsvp-col.pending h4{color:var(--muted)}
+.pos-group{margin-top:8px}.pos-label{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+.rsvp .pick{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0;text-align:left}.rsvp .pick:hover{color:var(--gold)}.rsvp .pick .n{color:var(--gold);font-weight:700}
+@media(max-width:700px){.rsvp-cols.three{grid-template-columns:1fr}}

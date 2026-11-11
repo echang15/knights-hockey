@@ -78,9 +78,10 @@ export class KnightsStack extends Stack {
     const integration = new HttpLambdaIntegration('Lambda', fn);
     const jwt = new HttpJwtAuthorizer('Jwt', `https://cognito-idp.${this.region}.amazonaws.com/${pool.userPoolId}`, { jwtAudience: [client.userPoolClientId] });
     // Public reads: an explicit list, so a new private route can never be exposed by a catch-all GET.
-    for (const c of ['players', 'games', 'posts', 'checkins']) api.addRoutes({ path: `/api/${c}`, methods: [HttpMethod.GET], integration });
-    // RSVP: players and admins only (token required here; the Lambda checks the group).
+    for (const c of ['players', 'games', 'posts']) api.addRoutes({ path: `/api/${c}`, methods: [HttpMethod.GET], integration });
+    // Player availability (check-in) is internal: reading and writing both need a token; the Lambda checks the group.
     api.addRoutes({ path: '/api/games/{id}/checkin', methods: [HttpMethod.POST], integration, authorizer: jwt });
+    api.addRoutes({ path: '/api/checkins', methods: [HttpMethod.GET], integration, authorizer: jwt });
     // Members-only and admin-only areas: a valid token is required here, and the Lambda then enforces the group.
     const all = [HttpMethod.GET, HttpMethod.PUT, HttpMethod.POST, HttpMethod.DELETE];
     api.addRoutes({ path: '/api/gallery/{proxy+}', methods: all, integration, authorizer: jwt });

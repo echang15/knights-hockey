@@ -19,7 +19,6 @@ const games: Game[] = opp.concat(opp).map((o, i) => {
   const g: Game = { id: `g${i + 1}`, date, opponent: o, home: i % 2 === 0, location: i % 2 === 0 ? 'Home Rink' : `${o} Arena`, status: past ? 'final' : 'scheduled' };
   if (past) {
     g.ourScore = Math.floor(r() * 6); g.theirScore = Math.floor(r() * 5); g.decision = 'REG';
-    g.attendance = 80 + Math.floor(r() * 220);
     const lines: StatLine[] = [];
     for (let k = 0; k < g.ourScore; k++) {
       const s = players[Math.floor(r() * 9)], a = players[Math.floor(r() * 9)];
@@ -36,7 +35,7 @@ const games: Game[] = opp.concat(opp).map((o, i) => {
 });
 
 const posts: Post[] = [
-  { id: 'welcome', title: 'Welcome to the new site', date: '2026-10-01', author: 'Coach', tags: ['news'], body: 'Scores, schedule, stats and attendance all live here now.\n\nThis is sample content — edit or delete it from the Admin page.' },
+  { id: 'welcome', title: 'Welcome to the new site', date: '2026-10-01', author: 'Coach', tags: ['news'], body: 'Scores, schedule, stats and player check-in all live here now.\n\nThis is sample content — edit or delete it from the Admin page.' },
   { id: 'tape-tales', title: 'Tape tales: the great stick-tape shortage', date: '2026-10-20', author: 'Team Parent', tags: ['random'], body: 'Nobody knows where it all goes. Somebody owes the bench about forty rolls.' },
 ];
 

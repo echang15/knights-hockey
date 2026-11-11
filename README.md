@@ -1,6 +1,6 @@
 # Knights Hockey
 
-NHL-style team site: schedule, scores, player/goalie stats, attendance, and a blog, with an admin UI for entering it all.
+NHL-style team site: schedule, scores, player/goalie stats, game-day player availability, and a blog, with an admin UI for entering it all.
 
 ## Architecture (all AWS, serverless, pennies/month)
 
@@ -13,7 +13,7 @@ NHL-style team site: schedule, scores, player/goalie stats, attendance, and a bl
 | Gallery photos | private S3 bucket, delivered via short-lived signed links |
 
 Reads are public; `PUT`/`DELETE` are rejected by API Gateway unless the caller has a valid Cognito token.
-Stats are computed in the browser from per-game stat lines, so entering a box score updates leaders, goalie SV%, and attendance automatically.
+Stats are computed in the browser from per-game stat lines, so entering a box score updates leaders and goalie SV% automatically.
 
 ## Player photos & bios
 
@@ -21,11 +21,13 @@ In **Admin → players → Edit**, choose a photo plus optional hometown, height
 
 **Privacy:** the site is public, and many players are minors. Get parent/guardian consent before posting photos or personal details like hometown, height and weight (all optional).
 
-## Game check-in (members only)
+## Game check-in (player availability, members only)
 
-Signed-in **players and admins** can mark themselves **In** or **Out** on an upcoming game's page (names can be picked from the roster or typed, so families can check in a kid). One entry per name per game — re-submitting switches In/Out. Guests are refused by the API and see a "sign in" prompt instead of the buttons.
+Purely internal, so coaches know who is coming and can set lines and defensive pairings — it has nothing to do with fans. On an upcoming game's page, signed-in members (players, families, admins) pick a **roster player** from a dropdown and mark them **In** or **Out**. The page shows **In / Out / No response** columns grouped by forwards, defense and goalies, with a tally per position (e.g. `9/12 Forwards`, `5/6 Defense`, `1/2 Goalies`).
 
-Counts and the In/Out lists remain **visible to everyone** (schedule, home page, game page). If you'd rather hide the names from guests too — worth considering since many players are minors — say so; it's a small change. Admins see an **×** next to each entry to remove it. Limits: `POST /api/games/{id}/checkin` only, upcoming games only, name validation, 150 entries per game, API-wide throttling.
+- Only active roster players can be checked in (no free-text names; retired players are excluded), and only for upcoming games. Re-submitting switches In/Out.
+- Guests can't check in **and can't see any of it**: the API refuses their reads and writes, and the site shows no counts or names to them.
+- Any member can update any roster player's status (so a parent can answer for their kid, and a coach can enter a text reply). Admins can clear an entry with **×**.
 
 ## Local development (no AWS needed)
 

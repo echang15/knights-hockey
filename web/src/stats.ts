@@ -14,13 +14,6 @@ export function record(games: Game[]) {
   return { gp, w, l, otl, gf, ga, pts: w * 2 + otl, pct: gp ? (w * 2 + otl) / (gp * 2) : 0 };
 }
 
-export function attendance(games: Game[]) {
-  const a = finals(games).filter((g) => g.attendance != null);
-  const home = a.filter((g) => g.home);
-  const sum = (xs: Game[]) => xs.reduce((s, g) => s + g.attendance!, 0);
-  return { total: sum(a), avgHome: home.length ? Math.round(sum(home) / home.length) : 0, best: a.reduce<Game | null>((b, g) => (!b || g.attendance! > b.attendance! ? g : b), null), games: a };
-}
-
 export interface Skater { player: Player; gp: number; g: number; a: number; pts: number; pim: number; sog: number; shPct: number }
 export interface Goalie { player: Player; gp: number; sa: number; ga: number; sv: number; svPct: number; gaa: number }
 
@@ -48,6 +41,14 @@ export const resultOf = (g: Game) => {
   const win = g.ourScore! > g.theirScore!;
   return { win, label: win ? 'W' : g.decision && g.decision !== 'REG' ? 'OTL' : 'L', suffix: g.decision && g.decision !== 'REG' ? ` (${g.decision})` : '' };
 };
+
+/** Who is in / out / hasn't answered for a game, among active roster players, ordered F, D, G then jersey number. */
+export function lineupFor(players: Player[], checkins: import('../../shared/types').Checkin[], gameId: string) {
+  const status = new Map(checkins.filter((c) => c.gameId === gameId).map((c) => [c.playerId, c.status]));
+  const order = { F: 0, D: 1, G: 2 } as const;
+  const roster = players.filter((p) => !p.retired).sort((a, b) => order[a.position] - order[b.position] || a.number - b.number);
+  return { in: roster.filter((p) => status.get(p.id) === 'in'), out: roster.filter((p) => status.get(p.id) === 'out'), pending: roster.filter((p) => !status.has(p.id)), status };
+}
 
 export const rsvpFor = (checkins: import('../../shared/types').Checkin[], gameId: string) => {
   const mine = checkins.filter((c) => c.gameId === gameId).sort((a, b) => a.at.localeCompare(b.at));

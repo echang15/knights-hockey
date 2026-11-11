@@ -11,7 +11,6 @@ export interface Ctx { store: Store; photos: PhotoStore; gallery: GalleryStore; 
 
 /** Collections served by the generic public-read / admin-write routes. Gallery data is deliberately NOT here. */
 const COLLECTIONS: Collection[] = ['players', 'games', 'posts', 'checkins'];
-const MAX_CHECKINS_PER_GAME = 150;
 const ID = /^[A-Za-z0-9_-]{1,80}$/;
 
 function validate(c: Collection, b: any): string | null {
@@ -26,22 +25,19 @@ function validate(c: Collection, b: any): string | null {
  * Routes: GET /api/{collection}; PUT /api/{collection}/{id} (upsert); DELETE /api/{collection}/{id}.
  * Write authorization is enforced by API Gateway's JWT authorizer (or LOCAL dev mode); the router trusts the caller.
  */
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
-
-/** MEMBERS ONLY (players + admins): POST /api/games/{id}/checkin {name, status:'in'|'out'} */
+/** MEMBERS ONLY: POST /api/games/{id}/checkin {playerId, status:'in'|'out'} — availability for a roster player. */
 async function checkin(gameId: string, body: any, store: Store): Promise<Res> {
-  const name = typeof body?.name === 'string' ? body.name.trim().replace(/\s+/g, ' ') : '';
-  if (name.length < 1 || name.length > 40 || /[<>]/.test(name)) return { status: 400, body: { error: 'name must be 1-40 characters' } };
+  const playerId = typeof body?.playerId === 'string' ? body.playerId : '';
+  if (!ID.test(playerId)) return { status: 400, body: { error: 'playerId required' } };
   if (body.status !== 'in' && body.status !== 'out') return { status: 400, body: { error: "status must be 'in' or 'out'" } };
-  const key = slug(name);
-  const id = `${gameId}__${key}`;
-  if (!key || !ID.test(id)) return { status: 400, body: { error: 'bad name' } };
+  const id = `${gameId}__${playerId}`;
+  if (!ID.test(id)) return { status: 400, body: { error: 'bad id' } };
+  const player = (await store.list('players')).find((p) => p.id === playerId);
+  if (!player || player.retired) return { status: 404, body: { error: 'player is not on the active roster' } };
   const game = (await store.list('games')).find((g) => g.id === gameId);
   if (!game) return { status: 404, body: { error: 'game not found' } };
   if (game.status !== 'scheduled') return { status: 409, body: { error: 'check-in is only open for upcoming games' } };
-  const existing = (await store.list('checkins')).filter((c) => c.gameId === gameId);
-  if (!existing.some((c) => c.id === id) && existing.length >= MAX_CHECKINS_PER_GAME) return { status: 429, body: { error: 'check-in list is full' } };
-  await store.put('checkins', { id, gameId, name, status: body.status, at: new Date().toISOString() });
+  await store.put('checkins', { id, gameId, playerId, status: body.status, at: new Date().toISOString() });
   return { status: 200, body: { ok: true } };
 }
 
@@ -194,7 +190,10 @@ export async function route(method: string, rawPath: string, body: unknown, ctx:
   const c = coll as Collection;
   const store = ctx.store;
   if (method === 'POST' && c === 'games' && parts[4] === 'checkin' && parts.length === 5) return deny(ctx, 'member') ?? checkin(id, body, store); // players + admins only; reading the lists stays public
-  if (method === 'GET' && !id) return { status: 200, body: await store.list(c) }; // public
+  if (method === 'GET' && !id) {
+    if (c === 'checkins') { const d = deny(ctx, 'member'); if (d) return d; } // availability is internal: members only
+    return { status: 200, body: await store.list(c) }; // everything else here is public
+  }
   // Everything below is a write: admins only (API Gateway only proves "has a valid token"; players have tokens too).
   const forbidden = deny(ctx, 'admin');
   if (forbidden) return forbidden;

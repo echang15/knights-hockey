@@ -16,10 +16,11 @@ export const save = (c: Collection, item: { id: string }) => req(`/${c}/${item.i
 export const remove = (c: Collection, id: string) => req(`/${c}/${id}`, { method: 'DELETE' });
 
 export interface Data { players: Player[]; games: Game[]; posts: Post[]; checkins: Checkin[] }
-export const checkin = (gameId: string, name: string, status: 'in' | 'out') =>
-  req(`/games/${gameId}/checkin`, { method: 'POST', body: JSON.stringify({ name, status }) });
-export async function loadAll(): Promise<Data> {
-  const [players, games, posts, checkins] = await Promise.all([list<Player>('players'), list<Game>('games'), list<Post>('posts'), list<Checkin>('checkins')]);
+export const checkin = (gameId: string, playerId: string, status: 'in' | 'out') =>
+  req(`/games/${gameId}/checkin`, { method: 'POST', body: JSON.stringify({ playerId, status }) });
+/** Check-ins are members-only, so guests never request them. */
+export async function loadAll(isMember: boolean): Promise<Data> {
+  const [players, games, posts, checkins] = await Promise.all([list<Player>('players'), list<Game>('games'), list<Post>('posts'), isMember ? list<Checkin>('checkins') : Promise.resolve([])]);
   games.sort((a, b) => a.date.localeCompare(b.date));
   posts.sort((a, b) => b.date.localeCompare(a.date));
   players.sort((a, b) => a.number - b.number);

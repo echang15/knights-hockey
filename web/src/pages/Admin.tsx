@@ -98,7 +98,7 @@ function GameForm({ game, players, onSave, onCancel }: { game: Game; players: Pl
     };
     if (status === 'final') {
       out.ourScore = num(f.get('our')) ?? 0; out.theirScore = num(f.get('their')) ?? 0;
-      out.decision = String(f.get('decision')) as Game['decision']; out.attendance = num(f.get('att'));
+      out.decision = String(f.get('decision')) as Game['decision'];
       const lines: StatLine[] = [];
       for (const p of players) {
         const v = (k: string) => num(f.get(`${p.id}.${k}`));
@@ -126,7 +126,6 @@ function GameForm({ game, players, onSave, onCancel }: { game: Game; players: Pl
             <label>Knights score<input name="our" type="number" min="0" defaultValue={game.ourScore} required /></label>
             <label>Opponent score<input name="their" type="number" min="0" defaultValue={game.theirScore} required /></label>
             <label>Decided in<select name="decision" defaultValue={game.decision ?? 'REG'}><option value="REG">Regulation</option><option value="OT">OT</option><option value="SO">Shootout</option></select></label>
-            <label>Attendance<input name="att" type="number" min="0" defaultValue={game.attendance} /></label>
           </div>
           <label>Recap<textarea name="recap" rows={4} defaultValue={game.recap} /></label>
           <table className="entry"><thead><tr><th>Player</th><th>G</th><th>A</th><th>SOG</th><th>PIM</th><th>SA</th><th>GA</th></tr></thead><tbody>

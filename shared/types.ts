@@ -41,7 +41,6 @@ export interface Game {
   ourScore?: number;
   theirScore?: number;
   decision?: 'REG' | 'OT' | 'SO';
-  attendance?: number;
   recap?: string;
   lines?: StatLine[];
 }
@@ -55,11 +54,11 @@ export interface Post {
   tags?: string[];
 }
 
-/** A public RSVP. One per (game, name); re-submitting updates it. */
+/** A roster player's availability for an upcoming game (used to plan lines and pairings). One per (game, player). */
 export interface Checkin {
   id: string;
   gameId: string;
-  name: string;
+  playerId: string;
   status: 'in' | 'out';
   at: string;
 }

@@ -20,7 +20,6 @@ export default function GamePage() {
         <div className="side"><small>{g.opponent.toUpperCase()}</small><b>{g.status === 'final' ? g.theirScore : '–'}</b></div>
       </div>
       {g.status === 'scheduled' && <Rsvp game={g} />}
-      {g.attendance != null && <p className="muted">Attendance: <b>{g.attendance.toLocaleString()}</b></p>}
       {g.recap && <section><h3 className="sect">Recap</h3>{g.recap.split(/\n\s*\n/).map((p, i) => <p key={i}>{p}</p>)}</section>}
       {sk.length > 0 && (
         <section><h3 className="sect">Skaters</h3>

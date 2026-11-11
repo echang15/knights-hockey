@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useData } from '../DataContext';
-import { attendance, finals, fmtDate, fmtTime, playerStats, ranked, record, rsvpFor } from '../stats';
+import { finals, fmtDate, fmtTime, playerStats, ranked, record, rsvpFor } from '../stats';
 import { GameRow } from '../components/GameRow';
 import { useAuth } from '../auth';
 import { LeaderCard } from '../components/LeaderCard';
@@ -10,7 +10,7 @@ export default function Home() {
   const { data } = useData();
   const { isMember } = useAuth();
   const { games, players, posts } = data!;
-  const rec = record(games), att = attendance(games);
+  const rec = record(games);
   const next = games.find((g) => g.status === 'scheduled');
   const last = finals(games).at(-1);
   const { skaters } = playerStats(players.filter((p) => !p.retired), games);
@@ -21,7 +21,7 @@ export default function Home() {
         <div>
           <p className="eyebrow">{TEAM.full}</p>
           <h1>{rec.w}-{rec.l}-{rec.otl}</h1>
-          <p className="muted">{rec.pts} PTS · {rec.gf} GF · {rec.ga} GA · {att.avgHome} avg home attendance</p>
+          <p className="muted">{rec.pts} PTS · {rec.gf} GF · {rec.ga} GA</p>
         </div>
         {next && (
           <Link to={`/game/${next.id}`} className="card next">
@@ -29,7 +29,7 @@ export default function Home() {
             <h2>{next.home ? 'vs' : '@'} {next.opponent}</h2>
             <p>{fmtDate(next.date, { weekday: 'long', month: 'long', day: 'numeric' })} · {fmtTime(next.date)}</p>
             <p className="muted">{next.location}</p>
-            <p><span className="tag">{rsvpFor(data!.checkins, next.id).ins.length} IN</span> <span className="muted">{isMember ? 'tap to check in / out' : 'sign in to check in'}</span></p>
+            {isMember && <p><span className="tag">{rsvpFor(data!.checkins, next.id).ins.length} IN</span> <span className="muted">tap to check in / out</span></p>}
           </Link>
         )}
       </section>
