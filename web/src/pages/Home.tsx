@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom';
 import { useData } from '../DataContext';
 import { attendance, finals, fmtDate, fmtTime, playerStats, ranked, record, rsvpFor } from '../stats';
 import { GameRow } from '../components/GameRow';
+import { useAuth } from '../auth';
 import { LeaderCard } from '../components/LeaderCard';
 import { TEAM } from '../config';
 
 export default function Home() {
   const { data } = useData();
+  const { isMember } = useAuth();
   const { games, players, posts } = data!;
   const rec = record(games), att = attendance(games);
   const next = games.find((g) => g.status === 'scheduled');
@@ -27,7 +29,7 @@ export default function Home() {
             <h2>{next.home ? 'vs' : '@'} {next.opponent}</h2>
             <p>{fmtDate(next.date, { weekday: 'long', month: 'long', day: 'numeric' })} · {fmtTime(next.date)}</p>
             <p className="muted">{next.location}</p>
-            <p><span className="tag">{rsvpFor(data!.checkins, next.id).ins.length} IN</span> <span className="muted">tap to check in / out</span></p>
+            <p><span className="tag">{rsvpFor(data!.checkins, next.id).ins.length} IN</span> <span className="muted">{isMember ? 'tap to check in / out' : 'sign in to check in'}</span></p>
           </Link>
         )}
       </section>

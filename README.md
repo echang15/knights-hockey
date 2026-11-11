@@ -21,11 +21,11 @@ In **Admin → players → Edit**, choose a photo plus optional hometown, height
 
 **Privacy:** the site is public, and many players are minors. Get parent/guardian consent before posting photos or personal details like hometown, height and weight (all optional).
 
-## Game check-in (public RSVP)
+## Game check-in (members only)
 
-Anyone can mark themselves **In** or **Out** on an upcoming game's page — no login. Names can be picked from the roster or typed. One entry per name per game (re-submitting switches In/Out). Counts show on the schedule and the home page's next-game card.
+Signed-in **players and admins** can mark themselves **In** or **Out** on an upcoming game's page (names can be picked from the roster or typed, so families can check in a kid). One entry per name per game — re-submitting switches In/Out. Guests are refused by the API and see a "sign in" prompt instead of the buttons.
 
-It is the one unauthenticated write in the system, so it is locked down: `POST /api/games/{id}/checkin` only, upcoming games only, name length/character validation, 150 entries per game max, and API-wide throttling (25 req/s). It's a trust-based system — anyone can type someone else's name. Admins (signed in) see an **×** next to each entry to remove junk.
+Counts and the In/Out lists remain **visible to everyone** (schedule, home page, game page). If you'd rather hide the names from guests too — worth considering since many players are minors — say so; it's a small change. Admins see an **×** next to each entry to remove it. Limits: `POST /api/games/{id}/checkin` only, upcoming games only, name validation, 150 entries per game, API-wide throttling.
 
 ## Local development (no AWS needed)
 

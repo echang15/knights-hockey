@@ -28,7 +28,7 @@ function validate(c: Collection, b: any): string | null {
  */
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 
-/** PUBLIC (no auth): POST /api/games/{id}/checkin {name, status:'in'|'out'} */
+/** MEMBERS ONLY (players + admins): POST /api/games/{id}/checkin {name, status:'in'|'out'} */
 async function checkin(gameId: string, body: any, store: Store): Promise<Res> {
   const name = typeof body?.name === 'string' ? body.name.trim().replace(/\s+/g, ' ') : '';
   if (name.length < 1 || name.length > 40 || /[<>]/.test(name)) return { status: 400, body: { error: 'name must be 1-40 characters' } };
@@ -193,7 +193,7 @@ export async function route(method: string, rawPath: string, body: unknown, ctx:
   if (api !== 'api' || !COLLECTIONS.includes(coll as Collection)) return { status: 404, body: { error: 'not found' } };
   const c = coll as Collection;
   const store = ctx.store;
-  if (method === 'POST' && c === 'games' && parts[4] === 'checkin' && parts.length === 5) return checkin(id, body, store); // public
+  if (method === 'POST' && c === 'games' && parts[4] === 'checkin' && parts.length === 5) return deny(ctx, 'member') ?? checkin(id, body, store); // players + admins only; reading the lists stays public
   if (method === 'GET' && !id) return { status: 200, body: await store.list(c) }; // public
   // Everything below is a write: admins only (API Gateway only proves "has a valid token"; players have tokens too).
   const forbidden = deny(ctx, 'admin');

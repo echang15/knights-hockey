@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Game } from '../../../shared/types';
 import { useData } from '../DataContext';
 import { checkin, remove } from '../api';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { rsvpFor } from '../stats';
 
@@ -9,7 +10,7 @@ const KEY = 'rsvpName';
 
 export function Rsvp({ game }: { game: Game }) {
   const { data, reload } = useData();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isMember } = useAuth();
   const [name, setName] = useState(() => localStorage.getItem(KEY) ?? '');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
@@ -43,13 +44,14 @@ export function Rsvp({ game }: { game: Game }) {
     <section>
       <h3 className="sect">Who’s in?</h3>
       <div className="card rsvp">
-        <div className="rsvp-form">
+        {!isMember && <p className="muted">Check-in is for team members. <Link to="/login" className="more">Sign in</Link> to mark yourself in or out.</p>}
+        {isMember && <div className="rsvp-form">
           <input list="roster-names" value={name} maxLength={40} placeholder="Your name" onChange={(e) => { setName(e.target.value); setMsg(''); }} />
           <datalist id="roster-names">{roster.map((p) => <option key={p.id} value={p.name} />)}</datalist>
           <button className={`btn ${mineStatus === 'in' ? '' : 'ghost'}`} disabled={busy} onClick={() => go('in')}>I’m in</button>
           <button className={`btn ${mineStatus === 'out' ? 'danger' : 'ghost'}`} disabled={busy} onClick={() => go('out')}>I’m out</button>
-        </div>
-        {(msg || mineStatus) && <p className="muted">{msg || `Currently marked: ${mineStatus === 'in' ? 'IN ✓' : 'OUT'} (tap again to change)`}</p>}
+        </div>}
+        {isMember && (msg || mineStatus) && <p className="muted">{msg || `Currently marked: ${mineStatus === 'in' ? 'IN ✓' : 'OUT'} (tap again to change)`}</p>}
         <div className="rsvp-cols">{list(ins, 'In', 'in')}{list(outs, 'Out', 'out')}</div>
       </div>
     </section>
